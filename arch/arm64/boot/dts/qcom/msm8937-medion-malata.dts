@@ -100,7 +100,7 @@
 		#size-cells = <0>;
 
 		accelerometer@10 {
-			compatible = "bosch,bma255";
+			compatible = "bosch,bma253";
 			reg = <0x10>;
 
 			vdd-supply = <&pm8937_l10>;
@@ -152,17 +152,6 @@
 	usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
 	};
-
-	/*
-	 * Until we hook up type-c detection, we
-	 * have to stick with this. But it works.
-	 
-	usb_id: usb-id {
-		compatible = "linux,extcon-usb-gpio";
-		id-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb_id_default>;
-	};*/
 };
 
 &adsp {
@@ -278,17 +267,11 @@
 		compatible = "medion,malata-panel";
 		//compatible = "malata,gama-wuxga";
 		reg = <0>;
-		vdd-supply =<&pm8937_l17>;
-		vddio-supply =<&pm8937_l6>;
-		vsp-supply =<&lab>;
-		vsn-supply =<&ibb>;
-
-		//backlight-gpios = <&tlmm 132 GPIO_ACTIVE_LOW>;
-		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
-
-		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
 		backlight = <&backlight>; 
+
+		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
 		port {
 			panel_in: endpoint {
@@ -305,7 +288,7 @@
 
 &mdss_dsi0_phy {
 	vddio-supply = <&pm8937_l6>;
-	qcom,dsi-phy-regulator-ldo-mode;
+	//qcom,dsi-phy-regulator-ldo-mode;
 
 	status = "okay";
 };
@@ -339,27 +322,6 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pwm_out>;
-};
-
-&ibb {
-	qcom,discharge-resistor-kohms = <32>;
-	regulator-min-microvolt = <4600000>;
-	regulator-max-microvolt = <6000000>;
-	regulator-min-microamp = <0>;
-	regulator-max-microamp = <800000>;
-	regulator-over-current-protection;
-	regulator-soft-start;
-	regulator-pull-down;
-};
-
-&lab {
-	regulator-min-microvolt = <4600000>;
-	regulator-max-microvolt = <6000000>;
-	regulator-min-microamp = <200000>;
-	regulator-max-microamp = <200000>;
-	regulator-over-current-protection;
-	regulator-soft-start;
-	regulator-pull-down;
 };
 
 &rpm_requests {

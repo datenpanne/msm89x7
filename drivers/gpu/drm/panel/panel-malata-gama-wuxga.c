@@ -16,10 +16,8 @@
 struct malata_gama_wuxga {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
-	struct regulator_bulk_data supplies[4];
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *enable_gpio;
-	//struct gpio_desc *backlight_gpio;
 	bool prepared;
 };
 
@@ -27,12 +25,6 @@ static inline
 struct malata_gama_wuxga *to_malata_gama_wuxga(struct drm_panel *panel)
 {
 	return container_of(panel, struct malata_gama_wuxga, panel);
-}
-
-static void malata_gama_wuxga_power(struct malata_gama_wuxga *ctx, int enable)
-{
-	gpiod_set_value_cansleep(ctx->enable_gpio, enable);
-	//gpiod_set_value_cansleep(ctx->backlight_gpio, enable);
 }
 
 static void malata_gama_wuxga_reset(struct malata_gama_wuxga *ctx)
@@ -59,11 +51,42 @@ static int malata_gama_wuxga_on(struct malata_gama_wuxga *ctx)
 	return 0;
 }
 
+static int malata_gama_wuxga_panel_on(struct malata_gama_wuxga *ctx)
+{
+	struct mipi_dsi_device *dsi = ctx->dsi;
+	struct device *dev = &dsi->dev;
+	int ret;
+
+	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+
+	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
+		return ret;
+	}
+	msleep(120);
+
+	ret = mipi_dsi_dcs_set_display_on(dsi);
+	if (ret < 0) {
+		dev_err(dev, "Failed to set display on: %d\n", ret);
+		return ret;
+	}
+	msleep(80);
+
+	return 0;
+}
+
 static int malata_gama_wuxga_off(struct malata_gama_wuxga *ctx)
 {
 	struct mipi_dsi_device *dsi = ctx->dsi;
 
 	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+
+	mipi_dsi_dcs_set_display_off(dsi);
+	msleep(80);
+
+	mipi_dsi_dcs_enter_sleep_mode(dsi);
+	msleep(120);
 
 	return 0;
 }
@@ -77,25 +100,33 @@ static int malata_gama_wuxga_prepare(struct drm_panel *panel)
 	if (ctx->prepared)
 		return 0;
 
-	ret = regulator_bulk_enable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
-	if (ret < 0) {
-		dev_err(dev, "Failed to enable regulators: %d\n", ret);
-		return ret;
-	}
+	gpiod_set_value_cansleep(ctx->enable_gpio, 1);
+	msleep(50);
 
 	malata_gama_wuxga_reset(ctx);
-
-	malata_gama_wuxga_power(ctx,1);
 
 	ret = malata_gama_wuxga_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 		return ret;
 	}
 
 	ctx->prepared = true;
+	return 0;
+}
+
+static int malata_gama_wuxga_enable(struct drm_panel *panel)
+{
+	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
+	struct device *dev = &ctx->dsi->dev;
+	int ret;
+
+	ret = malata_gama_wuxga_panel_on(ctx);
+	if (ret < 0) {
+		dev_err(dev, "Failed to turn on panel: %d\n", ret);
+		return ret;
+	}
 	return 0;
 }
 
@@ -112,12 +143,24 @@ static int malata_gama_wuxga_unprepare(struct drm_panel *panel)
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
-	malata_gama_wuxga_power(ctx,0);
+	gpiod_set_value_cansleep(ctx->enable_gpio, 0);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	regulator_bulk_disable(ARRAY_SIZE(ctx->supplies), ctx->supplies);
 
 	ctx->prepared = false;
+	return 0;
+}
+
+static int malata_gama_wuxga_disable(struct drm_panel *panel)
+{
+	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
+	struct device *dev = &ctx->dsi->dev;
+	int ret;
+
+	ret = malata_gama_wuxga_off(ctx);
+	if (ret < 0)
+		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
+
 	return 0;
 }
 
@@ -155,6 +198,8 @@ static int malata_gama_wuxga_get_modes(struct drm_panel *panel,
 }
 
 static const struct drm_panel_funcs malata_gama_wuxga_panel_funcs = {
+	.disable = malata_gama_wuxga_disable,
+	.enable = malata_gama_wuxga_enable,
 	.prepare = malata_gama_wuxga_prepare,
 	.unprepare = malata_gama_wuxga_unprepare,
 	.get_modes = malata_gama_wuxga_get_modes,
@@ -170,24 +215,10 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->supplies[0].supply = "vdd";
-	ctx->supplies[1].supply = "vddio";
-	ctx->supplies[2].supply = "vsp";
-	ctx->supplies[3].supply = "vsn";
-	ret = devm_regulator_bulk_get(dev, ARRAY_SIZE(ctx->supplies),
-				      ctx->supplies);
-	if (ret < 0)
-		return dev_err_probe(dev, ret, "Failed to get regulators\n");
-
-	ctx->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_HIGH);
+	ctx->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->enable_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->enable_gpio),
 				     "Failed to get enable-gpios\n");
-
-/*	ctx->backlight_gpio = devm_gpiod_get(dev, "backlight", GPIOD_OUT_HIGH);
-	if (IS_ERR(ctx->backlight_gpio))
-		return dev_err_probe(dev, PTR_ERR(ctx->backlight_gpio),
-				     "Failed to get backlight-gpios\n");*/
 
 	ctx->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->reset_gpio))
