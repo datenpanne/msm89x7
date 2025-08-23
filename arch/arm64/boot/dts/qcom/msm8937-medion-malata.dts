@@ -149,9 +149,9 @@
 		regulator-boot-on;
 	};
 
-	usb_vbus: extcon-usb-dummy {
+	/*usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
-	};
+	};*/
 };
 
 &adsp {
