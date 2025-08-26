@@ -242,15 +242,11 @@
 	};
 };
 
-&gps_mem {
-	status = "okay";
-};
-
 &gpu {
 	status = "okay";
 };
 
-&lpass_codec{
+&lpass_codec {
 	status = "okay";
 };
 
@@ -299,10 +295,6 @@
 	vddio-supply = <&pm8937_l6>;
 	qcom,dsi-phy-regulator-ldo-mode;
 
-	status = "okay";
-};
-
-&memshare {
 	status = "okay";
 };
 
