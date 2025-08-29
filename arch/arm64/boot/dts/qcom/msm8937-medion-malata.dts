@@ -276,7 +276,7 @@
 	status = "okay";
 
 	panel@0 {
-		compatible = "medion,malata-panel";
+		//compatible = "medion,malata-panel";
 		compatible = "malata,gama-wuxga";
 		reg = <0>;
 
