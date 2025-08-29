@@ -18,6 +18,9 @@ struct malata_gama_wuxga {
 	struct mipi_dsi_device *dsi;
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *enable_gpio;
+	struct gpio_desc *blen_gpio;
+	struct regulator *vdd;
+	struct regulator *vddio;
 	bool prepared;
 };
 
@@ -105,6 +108,16 @@ static int malata_gama_wuxga_prepare(struct drm_panel *panel)
 
 	malata_gama_wuxga_reset(ctx);
 
+	ret = regulator_enable(ctx->vdd);
+	if (ret < 0)
+		return ret;
+
+	ret = regulator_enable(ctx->vddio);
+	if (ret < 0)
+		return ret;
+
+	usleep_range(3000, 5000);
+
 	ret = malata_gama_wuxga_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
@@ -127,6 +140,9 @@ static int malata_gama_wuxga_enable(struct drm_panel *panel)
 		dev_err(dev, "Failed to turn on panel: %d\n", ret);
 		return ret;
 	}
+	gpiod_set_value_cansleep(ctx->blen_gpio, 1);
+	msleep(200);
+
 	return 0;
 }
 
@@ -146,6 +162,10 @@ static int malata_gama_wuxga_unprepare(struct drm_panel *panel)
 	gpiod_set_value_cansleep(ctx->enable_gpio, 0);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	usleep_range(5000, 7000);
+
+	regulator_disable(ctx->vddio);
+	regulator_disable(ctx->vdd);
 
 	ctx->prepared = false;
 	return 0;
@@ -156,6 +176,9 @@ static int malata_gama_wuxga_disable(struct drm_panel *panel)
 	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
+
+	gpiod_set_value_cansleep(ctx->blen_gpio, 0);
+	msleep(200);
 
 	ret = malata_gama_wuxga_off(ctx);
 	if (ret < 0)
@@ -214,6 +237,19 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
+
+	ctx->vdd = devm_regulator_get(dev, "vdd");
+	if (IS_ERR(ctx->vdd))
+		return PTR_ERR(ctx->vdd);
+
+	ctx->vddio = devm_regulator_get(dev, "vddio");
+	if (IS_ERR(ctx->vddio))
+		return PTR_ERR(ctx->vddio);
+
+	ctx->blen_gpio = devm_gpiod_get(dev, "blen", GPIOD_OUT_HIGH);
+	if (IS_ERR(ctx->blen_gpio))
+		return dev_err_probe(dev, PTR_ERR(ctx->blen_gpio),
+				     "Failed to get backlight-enable-gpios\n");
 
 	ctx->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->enable_gpio))

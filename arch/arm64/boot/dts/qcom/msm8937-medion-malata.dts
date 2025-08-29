@@ -34,10 +34,10 @@
 		brightness-levels = <0 255>;
 		num-interpolated-steps = <255>;
 		default-brightness-level = <128>;
-		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+/*		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-0 = <&lcd_bl_en_default>;
-		pinctrl-names = "default";
+		pinctrl-names = "default";*/
 	};
 
 	battery: battery {
@@ -273,10 +273,14 @@
 		compatible = "malata,gama-wuxga";
 		reg = <0>;
 
-		backlight = <&backlight>; 
+		vdd-supply = <&pm8937_l17>;
+		vddio-supply = <&pm8937_l6>;
 
 		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+		bklen-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+
+		backlight = <&backlight>; 
 
 		port {
 			panel_in: endpoint {
@@ -304,23 +308,24 @@
 };
 
 &mpss_mem {
-	reg = <0x0 0x86800000 0x0 0x5500000>;
+	reg = <0x0 0x86800000 0x0 0x5000000>;
 	status = "okay";
 };
 
 &pm8937_mpps {
-	pwm_enable_default: pwm-eanble-default-state {
+	mpp4_enable_default: mpp4-eanble-default-state {
 	//pwm_out: mpp4-state {
 		pins = "mpp4";
-		function = "digital";
+	//	function = "digital";
 		power-source = <PM8916_MPP_L5>;
 		output-low;
-		qcom,dtest = <1>;
+	//	qcom,dtest = <1>; 
+		function = "dtest2";
 	};
 };
 
 &pm8937_pwm {
-	pinctrl-0 = <&pwm_enable_default>;
+	pinctrl-0 = <&mpp4_enable_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -557,26 +562,26 @@
 		output-low;
 	};
 
-	lcd_bl_en_default: lcd-bl-en-default-state {
+	/*lcd_bl_en_default: lcd-bl-en-default-state {
 		pins = "gpio132";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
-	};
+	};*/
 
 	mdss_dsi_default: mdss-dsi-default-state {
-		pins = "gpio24","gpio60";
+		pins = "gpio24","gpio60", "gpio132";
 		function = "gpio";
-		drive-strength = <8>;
-		bias-disable;
-		output-high;
+		drive-strength = <10>;
+		bias-pull-up;
+		//output-high;
 	};
 
 	mdss_dsi_sleep: mdss-dsi-sleep-state {
-		pins = "gpio24","gpio60";
+		pins = "gpio24","gpio60", "gpio132";
 		function = "gpio";
-		drive-strength = <2>;
-		bias-pull-down;
+		drive-strength = <10>;
+		bias-pull-up;
 	};
 
 	sdc2_cd_default: sdc2-cd-default-state {
