@@ -150,6 +150,13 @@
 		regulator-boot-on;
 	};
 
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&usb_id_default>;
+		pinctrl-names = "default";
+	};
+
 	/*usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
 	};*/
@@ -606,6 +613,13 @@
 		bias-disable;
 	};
 
+	usb_id_default: usb-id-default {
+		pins = "gpio97","gpio131";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
 	/*pinctrl_otg_default: otg-default-state {
 		function = "gpio";
 		pins = "gpio97";
@@ -633,7 +647,8 @@
 
 &usb {
 	dr_mode = "otg";
-	extcon = <&pmi8950_smbcharger>, <&pmi8950_smbcharger>;
+	extcon = <&pmi8950_smbcharger>, <&usb_id>;
+//	extcon = <&pmi8950_smbcharger>, <&pmi8950_smbcharger>;
 	vbus-supply = <&otg_vbus>;
 	status = "okay";
 };
