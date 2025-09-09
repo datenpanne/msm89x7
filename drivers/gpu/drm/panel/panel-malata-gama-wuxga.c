@@ -5,23 +5,27 @@
 
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
+#include <linux/mod_devicetable.h>
 #include <linux/module.h>
-#include <linux/of.h>
 #include <linux/regulator/consumer.h>
 
 #include <drm/drm_mipi_dsi.h>
 #include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
+#include <drm/drm_probe_helper.h>
 
 struct malata_gama_wuxga {
 	struct drm_panel panel;
 	struct mipi_dsi_device *dsi;
+	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *enable_gpio;
 	struct gpio_desc *blen_gpio;
-	struct regulator *vdd;
-	struct regulator *vddio;
-	bool prepared;
+};
+
+static const struct regulator_bulk_data malata_gama_wuxga_supplies[] = {
+	{ .supply = "vdd" },
+	{ .supply = "vddio" },
 };
 
 static inline
@@ -43,55 +47,29 @@ static void malata_gama_wuxga_reset(struct malata_gama_wuxga *ctx)
 
 static int malata_gama_wuxga_on(struct malata_gama_wuxga *ctx)
 {
-	struct mipi_dsi_device *dsi = ctx->dsi;
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
+	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 
-	mipi_dsi_dcs_write_seq(dsi, 0xb0, 0x00);
-	mipi_dsi_dcs_write_seq(dsi, 0xbf, 0x04);
-	mipi_dsi_dcs_write_seq(dsi, 0xc0, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xb0, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xbf, 0x04);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xc0, 0x00);
 
-	return 0;
-}
-
-static int malata_gama_wuxga_panel_on(struct malata_gama_wuxga *ctx)
-{
-	struct mipi_dsi_device *dsi = ctx->dsi;
-	struct device *dev = &dsi->dev;
-	int ret;
-
-	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
-
-	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
-	if (ret < 0) {
-		dev_err(dev, "Failed to exit sleep mode: %d\n", ret);
-		return ret;
-	}
-	msleep(120);
-
-	ret = mipi_dsi_dcs_set_display_on(dsi);
-	if (ret < 0) {
-		dev_err(dev, "Failed to set display on: %d\n", ret);
-		return ret;
-	}
-	msleep(80);
-
-	return 0;
+	return dsi_ctx.accum_err;
 }
 
 static int malata_gama_wuxga_off(struct malata_gama_wuxga *ctx)
 {
-	struct mipi_dsi_device *dsi = ctx->dsi;
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 
-	dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
+	ctx->dsi->mode_flags &= ~MIPI_DSI_MODE_LPM;
 
-	mipi_dsi_dcs_set_display_off(dsi);
-	msleep(80);
+	mipi_dsi_dcs_set_display_off_multi(&dsi_ctx);
+	mipi_dsi_msleep(&dsi_ctx, 100);
+	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);
+	mipi_dsi_msleep(&dsi_ctx, 120);
 
-	mipi_dsi_dcs_enter_sleep_mode(dsi);
-	msleep(120);
-
-	return 0;
+	return dsi_ctx.accum_err;
 }
 
 static int malata_gama_wuxga_prepare(struct drm_panel *panel)
@@ -100,44 +78,22 @@ static int malata_gama_wuxga_prepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	if (ctx->prepared)
-		return 0;
-
-	gpiod_set_value_cansleep(ctx->enable_gpio, 1);
-	msleep(50);
+	ret = regulator_bulk_enable(ARRAY_SIZE(malata_gama_wuxga_supplies), ctx->supplies);
+	if (ret < 0) {
+		dev_err(dev, "Failed to enable regulators: %d\n", ret);
+		return ret;
+	}
 
 	malata_gama_wuxga_reset(ctx);
 
-	ret = regulator_enable(ctx->vdd);
-	if (ret < 0)
-		return ret;
-
-	ret = regulator_enable(ctx->vddio);
-	if (ret < 0)
-		return ret;
-
-	usleep_range(3000, 5000);
+	gpiod_set_value_cansleep(ctx->enable_gpio, 1);
+	msleep(50);
 
 	ret = malata_gama_wuxga_on(ctx);
 	if (ret < 0) {
 		dev_err(dev, "Failed to initialize panel: %d\n", ret);
 		gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-		return ret;
-	}
-
-	ctx->prepared = true;
-	return 0;
-}
-
-static int malata_gama_wuxga_enable(struct drm_panel *panel)
-{
-	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
-	struct device *dev = &ctx->dsi->dev;
-	int ret;
-
-	ret = malata_gama_wuxga_panel_on(ctx);
-	if (ret < 0) {
-		dev_err(dev, "Failed to turn on panel: %d\n", ret);
+		regulator_bulk_disable(ARRAY_SIZE(malata_gama_wuxga_supplies), ctx->supplies);
 		return ret;
 	}
 	gpiod_set_value_cansleep(ctx->blen_gpio, 1);
@@ -152,37 +108,17 @@ static int malata_gama_wuxga_unprepare(struct drm_panel *panel)
 	struct device *dev = &ctx->dsi->dev;
 	int ret;
 
-	if (!ctx->prepared)
-		return 0;
-
 	ret = malata_gama_wuxga_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
 
 	gpiod_set_value_cansleep(ctx->enable_gpio, 0);
 
-	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
-	usleep_range(5000, 7000);
-
-	regulator_disable(ctx->vddio);
-	regulator_disable(ctx->vdd);
-
-	ctx->prepared = false;
-	return 0;
-}
-
-static int malata_gama_wuxga_disable(struct drm_panel *panel)
-{
-	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
-	struct device *dev = &ctx->dsi->dev;
-	int ret;
-
 	gpiod_set_value_cansleep(ctx->blen_gpio, 0);
 	msleep(200);
 
-	ret = malata_gama_wuxga_off(ctx);
-	if (ret < 0)
-		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);
+	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
+	regulator_bulk_disable(ARRAY_SIZE(malata_gama_wuxga_supplies), ctx->supplies);
 
 	return 0;
 }
@@ -199,30 +135,16 @@ static const struct drm_display_mode malata_gama_wuxga_mode = {
 	.vtotal = 1920 + 34 + 2 + 24,
 	.width_mm = 135,
 	.height_mm = 216,
+	.type = DRM_MODE_TYPE_DRIVER,
 };
 
 static int malata_gama_wuxga_get_modes(struct drm_panel *panel,
 				       struct drm_connector *connector)
 {
-	struct drm_display_mode *mode;
-
-	mode = drm_mode_duplicate(connector->dev, &malata_gama_wuxga_mode);
-	if (!mode)
-		return -ENOMEM;
-
-	drm_mode_set_name(mode);
-
-	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
-	connector->display_info.width_mm = mode->width_mm;
-	connector->display_info.height_mm = mode->height_mm;
-	drm_mode_probed_add(connector, mode);
-
-	return 1;
+	return drm_connector_helper_get_modes_fixed(connector, &malata_gama_wuxga_mode);
 }
 
 static const struct drm_panel_funcs malata_gama_wuxga_panel_funcs = {
-	.disable = malata_gama_wuxga_disable,
-	.enable = malata_gama_wuxga_enable,
 	.prepare = malata_gama_wuxga_prepare,
 	.unprepare = malata_gama_wuxga_unprepare,
 	.get_modes = malata_gama_wuxga_get_modes,
@@ -238,13 +160,12 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->vdd = devm_regulator_get(dev, "vdd");
-	if (IS_ERR(ctx->vdd))
-		return PTR_ERR(ctx->vdd);
-
-	ctx->vddio = devm_regulator_get(dev, "vddio");
-	if (IS_ERR(ctx->vddio))
-		return PTR_ERR(ctx->vddio);
+	ret = devm_regulator_bulk_get_const(dev,
+					    ARRAY_SIZE(malata_gama_wuxga_supplies),
+					    malata_gama_wuxga_supplies,
+					    &ctx->supplies);
+	if (ret < 0)
+		return ret;
 
 	ctx->blen_gpio = devm_gpiod_get(dev, "blen", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->blen_gpio))
@@ -266,8 +187,7 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-		      MIPI_DSI_MODE_LPM ;
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO;
 
 	drm_panel_init(&ctx->panel, dev, &malata_gama_wuxga_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
@@ -277,9 +197,8 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 
 	ret = mipi_dsi_attach(dsi);
 	if (ret < 0) {
-		dev_err(dev, "Failed to attach to DSI host: %d\n", ret);
 		drm_panel_remove(&ctx->panel);
-		return ret;
+		return dev_err_probe(dev, ret, "Failed to attach to DSI host\n");
 	}
 
 	return 0;
