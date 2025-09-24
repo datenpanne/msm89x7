@@ -57,7 +57,7 @@
 		//stdout-path = "serial0:115200n8";
 		stdout-path = "framebuffer0";
 
-		framebuffer0: framebuffer@83000000 {
+		framebuffer0: framebuffer@90001000 {
 			compatible = "simple-framebuffer";
 			reg = <0x0 0x90001000 0x0 (1200 * 1920 * 3)>;
 			width = <1200>;
@@ -124,7 +124,7 @@
 	};
 
 	reserved-memory {
-		framebuffer: memory@83000000 {
+		framebuffer: memory@90001000 {
 			//reg = <0x00 0x90001000 0x00 0x1400000>;
 			reg = <0x0 0x90001000 0x0 (1200 * 1920 * 3)>;
 			no-map;
@@ -276,8 +276,8 @@
 	status = "okay";
 
 	panel@0 {
-		//compatible = "medion,malata-panel";
-		compatible = "malata,gama-wuxga";
+		compatible = "medion,malata-panel";
+		//compatible = "malata,gama-wuxga";
 		reg = <0>;
 
 		vdd-supply = <&pm8937_l17>;
@@ -304,7 +304,6 @@
 
 &mdss_dsi0_phy {
 	vddio-supply = <&pm8937_l6>;
-	//qcom,dsi-phy-regulator-ldo-mode;
 
 	status = "okay";
 };
