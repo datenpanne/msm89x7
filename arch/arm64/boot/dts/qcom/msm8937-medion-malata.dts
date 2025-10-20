@@ -141,6 +141,26 @@
 		};*/
 	};
 
+	reg_lcd_vsp: regulator-lcd-vsp {
+		compatible = "regulator-fixed";
+		regulator-name = "vsp";
+		regulator-min-microvolt = <5500000>;
+		regulator-max-microvolt = <5500000>;
+		regulator-always-on;
+		regulator-boot-on; // allows fb console to show up briefly at boot without always-on
+		enable-active-high;
+	};
+
+	reg_lcd_vsn: regulator-lcd-vsn {
+		compatible = "regulator-fixed";
+		regulator-name = "vsn";
+		regulator-min-microvolt = <5500000>;
+		regulator-max-microvolt = <5500000>;
+		regulator-always-on;
+		regulator-boot-on; // allows fb console to show up briefly at boot without always-on
+		enable-active-high;
+	};
+
 	vph_pwr: vph-pwr-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "vph_pwr";
@@ -280,8 +300,11 @@
 		//compatible = "malata,gama-wuxga";
 		reg = <0>;
 
-		vdd-supply = <&pm8937_l17>;
-		vddio-supply = <&pm8937_l6>;
+		pp3300-supply = <&pm8937_l17>;
+		pp1800-supply = <&pm8937_l6>;
+
+		avdd-supply = <&reg_lcd_vsp>;
+		avee-supply = <&reg_lcd_vsn>;
 
 		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
