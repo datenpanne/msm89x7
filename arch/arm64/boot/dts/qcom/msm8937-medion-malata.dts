@@ -34,10 +34,10 @@
 		brightness-levels = <0 255>;
 		num-interpolated-steps = <255>;
 		default-brightness-level = <128>;
-/*		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-0 = <&lcd_bl_en_default>;
-		pinctrl-names = "default";*/
+		pinctrl-names = "default";
 	};
 
 	battery: battery {
@@ -285,7 +285,7 @@
 
 		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
-		bklen-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+		//bklen-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
 
 		backlight = <&backlight>; 
 
@@ -568,15 +568,15 @@
 		output-low;
 	};
 
-	/*lcd_bl_en_default: lcd-bl-en-default-state {
+	lcd_bl_en_default: lcd-bl-en-default-state {
 		pins = "gpio132";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
-	};*/
+	};
 
 	mdss_dsi_default: mdss-dsi-default-state {
-		pins = "gpio24","gpio60", "gpio132";
+		pins = "gpio24","gpio60";
 		function = "gpio";
 		drive-strength = <10>;
 		bias-pull-up;
@@ -584,7 +584,7 @@
 	};
 
 	mdss_dsi_sleep: mdss-dsi-sleep-state {
-		pins = "gpio24","gpio60", "gpio132";
+		pins = "gpio24","gpio60";
 		function = "gpio";
 		drive-strength = <10>;
 		bias-pull-up;
