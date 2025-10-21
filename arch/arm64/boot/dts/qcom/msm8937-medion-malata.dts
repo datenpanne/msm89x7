@@ -34,7 +34,7 @@
 		brightness-levels = <0 255>;
 		num-interpolated-steps = <255>;
 		default-brightness-level = <128>;
-		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>,<&tlmm 24 GPIO_ACTIVE_HIGH>;
 
 		pinctrl-0 = <&lcd_bl_en_default>;
 		pinctrl-names = "default";
@@ -306,8 +306,10 @@
 		avdd-supply = <&reg_lcd_vsp>;
 		avee-supply = <&reg_lcd_vsn>;
 
-		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+		//en-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
+		//enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		//reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 		//bklen-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
 
 		backlight = <&backlight>; 
@@ -592,7 +594,7 @@
 	};
 
 	lcd_bl_en_default: lcd-bl-en-default-state {
-		pins = "gpio132";
+		pins = "gpio132","gpio24";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
