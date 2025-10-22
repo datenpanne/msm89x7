@@ -343,7 +343,7 @@
 	status = "okay";
 };
 
-&pm8937_mpps {
+/*&pm8937_mpps {
 	mpp4_enable_default: mpp4-eanble-default-state {
 	//pwm_out: mpp4-state {
 		pins = "mpp4";
@@ -353,12 +353,12 @@
 	//	qcom,dtest = <1>; 
 		function = "dtest2";
 	};
-};
+};*/
 
 &pm8937_pwm {
-	pinctrl-0 = <&mpp4_enable_default>;
-	pinctrl-names = "default";
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8937_resin {
@@ -715,4 +715,14 @@
 
 &xo_board {
 	clock-frequency = <19200000>;
+};
+
+&pm8937_mpps {
+	pwm_out: mpp4-state {
+		pins = "mpp4";
+		function = "digital";
+		power-source = <PM8916_MPP_L5>;
+		output-low;
+		qcom,dtest = <1>;
+	};
 };
