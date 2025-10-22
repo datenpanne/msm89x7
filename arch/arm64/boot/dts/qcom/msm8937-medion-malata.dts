@@ -670,10 +670,11 @@
 };
 
 &usb {
-	dr_mode = "otg";
-	extcon = <&pmi8950_smbcharger>, <&usb_id>;
+//	dr_mode = "otg";
+	extcon = <&usb_id>, <&usb_id>;
+//	extcon = <&pmi8950_smbcharger>, <&usb_id>;
 //	extcon = <&pmi8950_smbcharger>, <&pmi8950_smbcharger>;
-	vbus-supply = <&otg_vbus>;
+//	vbus-supply = <&otg_vbus>;
 	status = "okay";
 };
 
