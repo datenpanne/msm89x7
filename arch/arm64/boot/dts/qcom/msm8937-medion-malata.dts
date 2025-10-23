@@ -27,28 +27,6 @@
 		mmc1 = &sdhc_2;
 	};
 
-	backlight: backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pm8937_pwm 0 100000>;
-
-		brightness-levels = <0 255>;
-		num-interpolated-steps = <255>;
-		default-brightness-level = <128>;
-		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>,<&tlmm 24 GPIO_ACTIVE_HIGH>;
-
-		pinctrl-0 = <&lcd_bl_en_default>;
-		pinctrl-names = "default";
-	};
-
-	battery: battery {
-		compatible = "simple-battery";
- //TODO noch nicht komplett
-		charge-full-design-microamp-hours = <6849000>;
-		constant-charge-current-max-microamp = <1000000>;
-		voltage-min-design-microvolt = <3400000>;
-		voltage-max-design-microvolt = <4300000>;
-	};
-
 	chosen {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -73,7 +51,7 @@
 				 <&gcc GCC_MDSS_PCLK0_CLK>,
 				 <&gcc GCC_MDSS_ESC0_CLK>;
 			power-domains = <&gcc MDSS_GDSC>;
-			status = "disabled";
+			status = "ok";
 		};
 	};
 
@@ -115,14 +93,6 @@
 		};
 	};
 
-	speaker_amp: audio-amplifier {
-		compatible = "simple-audio-amplifier";
-		enable-gpios = <&tlmm 85 GPIO_ACTIVE_HIGH>;
-		sound-name-prefix = "Speaker Amp";
-		pinctrl-0 = <&speaker_amp_default>;
-		pinctrl-names = "default";
-	};
-
 	reserved-memory {
 		framebuffer: memory@90001000 {
 			//reg = <0x00 0x90001000 0x00 0x1400000>;
@@ -139,26 +109,6 @@
 			ftrace-size = <0x1000>;
 			pmsg-size = <0x20000>;
 		};*/
-	};
-
-	reg_lcd_vsp: regulator-lcd-vsp {
-		compatible = "regulator-fixed";
-		regulator-name = "vsp";
-		regulator-min-microvolt = <5500000>;
-		regulator-max-microvolt = <5500000>;
-		regulator-always-on;
-		regulator-boot-on; // allows fb console to show up briefly at boot without always-on
-		enable-active-high;
-	};
-
-	reg_lcd_vsn: regulator-lcd-vsn {
-		compatible = "regulator-fixed";
-		regulator-name = "vsn";
-		regulator-min-microvolt = <5500000>;
-		regulator-max-microvolt = <5500000>;
-		regulator-always-on;
-		regulator-boot-on; // allows fb console to show up briefly at boot without always-on
-		enable-active-high;
 	};
 
 	vph_pwr: vph-pwr-regulator {
@@ -197,36 +147,6 @@
 &blsp1_i2c2 {
 	status = "okay";
 
-//TODO get it work
-/*	typec_pd: usb-pd@3d {
-		compatible = "pericom,pi3usb102", "gpio-sbu-mux";
-		reg = <0x3d>;
-*/
-		/*interrupt-parent = <&tlmm>;
-		interrupts = <97 IRQ_TYPE_LEVEL_LOW>;
-		interrupt-names = "irq";*/
-
-/*		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_typec>;
-		vcc-supply = <&pm8937_l5>;
-		select-gpios = <&tlmm  97 GPIO_ACTIVE_HIGH>;
-		enable-gpios = <&tlmm 131 GPIO_ACTIVE_LOW>;
-		mode-switch;
-		orientation-switch;
-
-		typec_con: connector {
-			compatible = "usb-c-connector";
-			label = "USB-C";
-
-			port {
-				typec_ep: endpoint {
-					remote-endpoint = <&otg_ep>;
-				};
-			};
-		};
-	};
-*/
-
 };
 
 &blsp1_i2c3 {
@@ -253,83 +173,11 @@
 	};
 };
 
-&blsp2_i2c1 {
-	status = "okay";
-
-	headphones: amp@60 {
-		compatible = "ti,tpa6130a2";
-		reg = <0x60>;
-		Vdd-supply = <&pm8937_l17>;
-		power-gpio = <&tlmm 32 GPIO_ACTIVE_HIGH>;
-
-		pinctrl-0 = <&headphones_switch_default>;
-		pinctrl-1 = <&headphones_switch_suspend>;
-		pinctrl-names = "default","sleep";
-		#sound-dai-cells = <0>;
-	};
-};
-
-&gpu {
-	status = "okay";
-};
-
 &lpass_codec {
 	status = "okay";
 };
 
 &mba_mem {
-	status = "okay";
-};
-
-&mdss {
-	status = "okay";
-};
-
-&mdss_dsi0 {
-	vdda-supply = <&pm8937_l2>;
-	vddio-supply = <&pm8937_l6>;
-
-	pinctrl-0 = <&mdss_dsi_default>;
-	pinctrl-1 = <&mdss_dsi_sleep>;
-	pinctrl-names = "default", "sleep";
-
-	status = "okay";
-
-	panel@0 {
-		compatible = "medion,malata-panel";
-		//compatible = "malata,gama-wuxga";
-		reg = <0>;
-
-		pp3300-supply = <&pm8937_l17>;
-		pp1800-supply = <&pm8937_l6>;
-
-		avdd-supply = <&reg_lcd_vsp>;
-		avee-supply = <&reg_lcd_vsn>;
-
-		//en-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
-		enable-gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
-		//enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
-		//reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
-		//bklen-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
-
-		backlight = <&backlight>; 
-
-		port {
-			panel_in: endpoint {
-				remote-endpoint = <&mdss_dsi0_out>;
-			};
-		};
-	};
-};
-
-&mdss_dsi0_out {
-	data-lanes = <0 1 2 3>;
-	remote-endpoint = <&panel_in>;
-};
-
-&mdss_dsi0_phy {
-	vddio-supply = <&pm8937_l6>;
-
 	status = "okay";
 };
 
@@ -341,24 +189,6 @@
 &mpss_mem {
 	reg = <0x0 0x86800000 0x0 0x5000000>;
 	status = "okay";
-};
-
-/*&pm8937_mpps {
-	mpp4_enable_default: mpp4-eanble-default-state {
-	//pwm_out: mpp4-state {
-		pins = "mpp4";
-	//	function = "digital";
-		power-source = <PM8916_MPP_L5>;
-		output-low;
-	//	qcom,dtest = <1>; 
-		function = "dtest2";
-	};
-};*/
-
-&pm8937_pwm {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8937_resin {
@@ -374,17 +204,6 @@
 		regulator-always-on;
 		regulator-boot-on;
 	};
-};
-
-&pmi8950_fg {
-	monitored-battery = <&battery>;
-	power-supplies = <&pmi8950_smbcharger>;
-	status = "okay";
-};
-
-&pmi8950_smbcharger {
-	monitored-battery = <&battery>;
-	status = "okay";
 };
 
 &rpm_requests {
@@ -536,39 +355,6 @@
 	clock-frequency = <32768>;
 };
 
-&sound {
-	model = "medion-malata";
-
-	aux-devs = <&speaker_amp>, <&headphones>;
-	widgets =
-		"Speaker", "Headphone", "Headphone Jack";
-	pin-switches = "Speaker","headphones";
-	audio-routing =
-		"Speaker", "Speaker Amp OUT",
-		"Speaker Amp IN", "HPHR",
-		"Headphone Jack", "HPLEFT",
-		"Headphone Jack", "HPRIGHT",
-		"LEFTIN", "HPL",
-		"RIGHTIN", "HPR",
-		"AMIC1", "MIC BIAS External1",
-		"AMIC2", "MIC BIAS Internal2",
-		"AMIC3", "MIC BIAS External1",
-		"MM_DL1", "MultiMedia1 Playback",
-		"MM_DL3", "MultiMedia3 Playback",
-		"MM_DL4", "MultiMedia4 Playback",
-		"MultiMedia2 Capture", "MM_UL2";
-
-	status = "okay";
-};
-/*
-&sound_dai_secondary {
-	status = "okay";
-
-	codec {
-		sound-dai = <&headphones>;
-	};
-};*/
-
 &tlmm {
 	gpio-reserved-ranges = <0 4>, <20 4>;
 
@@ -682,6 +468,8 @@
 	vdd-supply = <&pm8937_l2>;
 	vdda1p8-supply = <&pm8937_l7>;
 	vdda3p3-supply = <&pm8937_l13>;
+
+	extcon = <&usb_id>;
 	status = "okay";
 };
 
@@ -716,14 +504,4 @@
 
 &xo_board {
 	clock-frequency = <19200000>;
-};
-
-&pm8937_mpps {
-	pwm_out: mpp4-state {
-		pins = "mpp4";
-		function = "digital";
-		power-source = <PM8916_MPP_L5>;
-		output-low;
-		qcom,dtest = <1>;
-	};
 };
