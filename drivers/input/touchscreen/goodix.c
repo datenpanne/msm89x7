@@ -973,6 +973,10 @@ static int goodix_get_gpio_config(struct goodix_ts_data *ts)
 	if (IS_ERR(ts->avdd28))
 		return dev_err_probe(dev, PTR_ERR(ts->avdd28), "Failed to get AVDD28 regulator\n");
 
+	ts->vdd = devm_regulator_get(dev, "VDD");
+	if (IS_ERR(ts->vdd))
+		return dev_err_probe(dev, PTR_ERR(ts->vdd), "Failed to get VDD regulator\n");
+
 	ts->vddio = devm_regulator_get(dev, "VDDIO");
 	if (IS_ERR(ts->vddio))
 		return dev_err_probe(dev, PTR_ERR(ts->vddio), "Failed to get VDDIO regulator\n");
@@ -1290,6 +1294,7 @@ static void goodix_disable_regulators(void *arg)
 
 	regulator_disable(ts->vddio);
 	regulator_disable(ts->avdd28);
+	regulator_disable(ts->vdd);
 }
 
 static int goodix_ts_probe(struct i2c_client *client)
@@ -1323,6 +1328,14 @@ static int goodix_ts_probe(struct i2c_client *client)
 	if (error) {
 		dev_err(&client->dev,
 			"Failed to enable AVDD28 regulator: %d\n",
+			error);
+		return error;
+	}
+
+	error = regulator_enable(ts->vdd);
+	if (error) {
+		dev_err(&client->dev,
+			"Failed to enable VDDregulator: %d\n",
 			error);
 		return error;
 	}

@@ -120,14 +120,14 @@
 		regulator-boot-on;
 	};
 
-	usb_id: usb-id {
+	/*	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-names = "default";
 	};
 
-	/*usb_vbus: extcon-usb-dummy {
+usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
 	};*/
 };
@@ -143,12 +143,41 @@
 &apr {
 	status = "okay";
 };
-
+/*
 &blsp1_i2c2 {
 	status = "okay";
 
-};
+//TODO get it work
+	typec_pd: usb-pd@3d {
+		compatible = "pericom,pi3usb102", "gpio-sbu-mux";
+		reg = <0x3d>;*/
 
+		/*interrupt-parent = <&tlmm>;
+		interrupts = <97 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-names = "irq";*/
+
+/*		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_typec>;
+		vcc-supply = <&pm8937_l5>;
+		select-gpios = <&tlmm  97 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&tlmm 131 GPIO_ACTIVE_LOW>;
+		mode-switch;
+		orientation-switch;
+
+		typec_con: connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+
+			port {
+				typec_ep: endpoint {
+					remote-endpoint = <&otg_ep>;
+				};
+			};
+		};
+	};
+};*/
+
+};
 &blsp1_i2c3 {
 	status = "okay";
 
@@ -160,6 +189,7 @@
 		irq-gpios = <&tlmm 41 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 		AVDD28-supply = <&pm8937_l17>;
+		VDD-supply = <&pm8937_l17>;
 		VDDIO-supply = <&pm8937_l6>;
 
 		pinctrl-names = "default";
@@ -168,8 +198,8 @@
 		touchscreen-size-x = <1200>;
 		touchscreen-size-y = <1920>;
 
-	//	touchscreen-inverted-x = true;
-	//	touchscreen-swapped-x-y = true;
+		touchscreen-inverted-x = true;
+		touchscreen-swapped-x-y = true;
 	};
 };
 
@@ -455,7 +485,7 @@
 	};*/
 };
 
-&usb {
+/*&usb {
 //	dr_mode = "otg";
 	extcon = <&usb_id>, <&usb_id>;
 //	extcon = <&pmi8950_smbcharger>, <&usb_id>;
@@ -470,6 +500,19 @@
 	vdda3p3-supply = <&pm8937_l13>;
 
 	extcon = <&usb_id>;
+	status = "okay";
+};*/
+
+&usb {
+	dr_mode = "peripheral";
+	extcon = <&usb_vbus>;
+	status = "okay";
+};
+
+&usb_hs_phy {
+	vdd-supply = <&pm8937_l2>;
+	vdda1p8-supply = <&pm8937_l7>;
+	vdda3p3-supply = <&pm8937_l13>;
 	status = "okay";
 };
 
