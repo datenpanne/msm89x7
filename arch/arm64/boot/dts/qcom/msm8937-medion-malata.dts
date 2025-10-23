@@ -197,8 +197,8 @@ usb_vbus: extcon-usb-dummy {
 		touchscreen-size-x = <1200>;
 		touchscreen-size-y = <1920>;
 
-		touchscreen-inverted-x = true;
-		touchscreen-swapped-x-y = true;
+		touchscreen-inverted-x;
+		touchscreen-swapped-x-y;
 	};
 };
 
