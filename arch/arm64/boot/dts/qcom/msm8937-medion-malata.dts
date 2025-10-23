@@ -177,7 +177,6 @@ usb_vbus: extcon-usb-dummy {
 	};
 };*/
 
-};
 &blsp1_i2c3 {
 	status = "okay";
 
