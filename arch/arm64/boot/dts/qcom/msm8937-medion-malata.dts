@@ -55,6 +55,15 @@
 		};
 	};
 
+	battery: battery {
+		compatible = "simple-battery";
+ //TODO noch nicht komplett
+		charge-full-design-microamp-hours = <6849000>;
+		constant-charge-current-max-microamp = <1000000>;
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4300000>;
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -126,10 +135,11 @@
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-names = "default";
 	};
+;*/
 
-usb_vbus: extcon-usb-dummy {
+	usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
-	};*/
+	}
 };
 
 &adsp {
@@ -233,6 +243,11 @@ usb_vbus: extcon-usb-dummy {
 		regulator-always-on;
 		regulator-boot-on;
 	};
+};
+
+&pmi8950_fg {
+	monitored-battery = <&battery>;
+	status = "okay";
 };
 
 &rpm_requests {
