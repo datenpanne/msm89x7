@@ -129,17 +129,17 @@
 		regulator-boot-on;
 	};
 
-	/*	usb_id: usb-id {
+	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
+		vbus-gpios = <&tlmm 131 GPIO_ACTIVE_LOW>;
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-names = "default";
 	};
-;*/
-
+/*
 	usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
-	}
+	};*/
 };
 
 &adsp {
@@ -470,7 +470,7 @@
 	usb_id_default: usb-id-default {
 		pins = "gpio97","gpio131";
 		function = "gpio";
-		drive-strength = <8>;
+		drive-strength = <2>;
 		bias-pull-up;
 	};
 
@@ -518,8 +518,10 @@
 };*/
 
 &usb {
-	dr_mode = "peripheral";
-	extcon = <&usb_vbus>;
+	//dr_mode = "peripheral";
+	extcon = <&usb_id>, <&usb_id>;
+	usb-role-switch;
+
 	status = "okay";
 };
 
