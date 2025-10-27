@@ -55,6 +55,19 @@
 		};
 	};
 
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8937_pwm 0 100000>;
+
+		brightness-levels = <0 255>;
+		num-interpolated-steps = <255>;
+		default-brightness-level = <128>;
+		enable-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>,<&tlmm 24 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-0 = <&lcd_bl_en_default>;
+		pinctrl-names = "default";
+	};
+
 	battery: battery {
 		compatible = "simple-battery";
  //TODO noch nicht komplett
@@ -285,6 +298,12 @@
 &mpss_mem {
 	reg = <0x0 0x86800000 0x0 0x5000000>;
 	status = "okay";
+};
+
+&pm8937_pwm {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_out>;
 };
 
 &pm8937_resin {
@@ -627,4 +646,14 @@
 
 &xo_board {
 	clock-frequency = <19200000>;
+};
+
+&pm8937_mpps {
+	pwm_out: mpp4-state {
+		pins = "mpp4";
+		function = "digital";
+		power-source = <PM8916_MPP_L5>;
+		output-low;
+		qcom,dtest = <1>;
+	};
 };
