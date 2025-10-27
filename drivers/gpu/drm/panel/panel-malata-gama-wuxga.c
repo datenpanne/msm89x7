@@ -56,7 +56,7 @@ static int malata_gama_wuxga_on(struct malata_gama_wuxga *ctx)
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xbf, 0x04);
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xc0, 0x00);
 
-	mipi_dsi_msleep(&ctx, 150);
+	mipi_dsi_msleep(&dsi_ctx, 150);
 
 	return dsi_ctx.accum_err;
 }
@@ -125,8 +125,8 @@ static int malata_gama_wuxga_enable(struct drm_panel *panel)
 static int malata_gama_wuxga_unprepare(struct drm_panel *panel)
 {
 	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
-	struct device *dev = &ctx->dsi->dev;
-	int ret;
+	//struct device *dev = &ctx->dsi->dev;
+	//int ret;
 
 	/*ret = malata_gama_wuxga_off(ctx);
 	if (ret < 0)
