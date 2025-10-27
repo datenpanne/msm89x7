@@ -129,14 +129,14 @@
 		regulator-boot-on;
 	};
 
-	usb_id: usb-id {
+/*	usb_id: usb-id {
 		compatible = "linux,extcon-usb-gpio";
 		id-gpios = <&tlmm 97 GPIO_ACTIVE_HIGH>;
 		vbus-gpios = <&tlmm 131 GPIO_ACTIVE_LOW>;
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-names = "default";
 	};
-/*
+
 	usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
 	};*/
@@ -153,20 +153,20 @@
 &apr {
 	status = "okay";
 };
-/*
+
 &blsp1_i2c2 {
 	status = "okay";
 
 //TODO get it work
 	typec_pd: usb-pd@3d {
 		compatible = "pericom,pi3usb102", "gpio-sbu-mux";
-		reg = <0x3d>;*/
+		reg = <0x3d>;
 
 		/*interrupt-parent = <&tlmm>;
 		interrupts = <97 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-names = "irq";*/
 
-/*		pinctrl-names = "default";
+		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_typec>;
 		vcc-supply = <&pm8937_l5>;
 		select-gpios = <&tlmm  97 GPIO_ACTIVE_HIGH>;
@@ -185,7 +185,7 @@
 			};
 		};
 	};
-};*/
+};
 
 &blsp1_i2c3 {
 	status = "okay";
@@ -194,8 +194,8 @@
 		compatible = "goodix,gt9271";
 		reg = <0x5d>;
 
-		interrupts-extended = <&tlmm 41 IRQ_TYPE_EDGE_RISING>;
-		irq-gpios = <&tlmm 41 GPIO_ACTIVE_HIGH>;
+		interrupt-parent = <&tlmm>;
+		irq-gpios = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
 		reset-gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 		AVDD28-supply = <&pm8937_l17>;
 		VDD-supply = <&pm8937_l17>;
@@ -461,20 +461,20 @@
 	};
 
 	touch_pins_default: touch-pins-default-state {
-		pins = "gpio41";
+		pins = "gpio41","gpio40";
 		function = "gpio";
-		drive-strength = <2>;
-		bias-disable;
+		drive-strength = <8>;
+		bias-pull-up;
 	};
 
-	usb_id_default: usb-id-default {
+/*	usb_id_default: usb-id-default {
 		pins = "gpio97","gpio131";
 		function = "gpio";
 		drive-strength = <2>;
 		bias-pull-up;
-	};
+	};*/
 
-	/*pinctrl_otg_default: otg-default-state {
+	pinctrl_otg_default: otg-default-state {
 		function = "gpio";
 		pins = "gpio97";
 		output-high;
@@ -496,7 +496,7 @@
 		function = "gpio";
 		pins = "gpio131";
 		bias-pull-up;
-	};*/
+	};
 };
 
 /*&usb {
@@ -518,8 +518,19 @@
 };*/
 
 &usb {
-	//dr_mode = "peripheral";
-	extcon = <&usb_id>, <&usb_id>;
+	pinctrl-names = "default", "host", "device";
+	pinctrl-0 = <&pinctrl_otg_default>;
+	pinctrl-1 = <&pinctrl_otg_host>;
+	pinctrl-2 = <&pinctrl_otg_device>;
+	usb-role-switch;
+	status = "okay";
+
+	port {
+		otg_ep: endpoint {
+			remote-endpoint = <&typec_ep>;
+		};
+	};
+};
 	usb-role-switch;
 
 	status = "okay";
