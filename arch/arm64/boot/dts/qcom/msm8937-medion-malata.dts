@@ -51,7 +51,7 @@
 				 <&gcc GCC_MDSS_PCLK0_CLK>,
 				 <&gcc GCC_MDSS_ESC0_CLK>;
 			power-domains = <&gcc MDSS_GDSC>;
-			status = "ok";
+			status = "disabled";
 		};
 	};
 
@@ -60,8 +60,15 @@
  //TODO noch nicht komplett
 		charge-full-design-microamp-hours = <6849000>;
 		constant-charge-current-max-microamp = <1000000>;
-		voltage-min-design-microvolt = <3400000>;
+		voltage-min-design-microvolt = <3500000>;
 		voltage-max-design-microvolt = <4300000>;
+
+
+		/*energy-full-design-microwatt-hours = <11500000>; //??
+		constant-charge-voltage-max-microvolt = <4400000>;
+		precharge-current-microamp = <256000>;
+		charge-term-current-microamp = <60000>;*/
+
 	};
 
 	gpio-keys {
@@ -213,11 +220,60 @@
 	};
 };
 
+&gpu {
+	status = "okay";
+};
+
 &lpass_codec {
 	status = "okay";
 };
 
 &mba_mem {
+	status = "okay";
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0 {
+	vdda-supply = <&pm8937_l2>;
+	vddio-supply = <&pm8937_l6>;
+
+	pinctrl-0 = <&mdss_dsi_default>;
+	pinctrl-1 = <&mdss_dsi_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	status = "okay";
+
+	panel@0 {
+		compatible = "medion,malata-panel";
+		//compatible = "malata,gama-wuxga";
+		reg = <0>;
+
+		enable-gpios = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
+
+		//bklen-gpios = <&tlmm 132 GPIO_ACTIVE_HIGH>;
+
+		backlight = <&backlight>; 
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+&mdss_dsi0_out {
+	data-lanes = <0 1 2 3>;
+	remote-endpoint = <&panel_in>;
+};
+
+&mdss_dsi0_phy {
+	vddio-supply = <&pm8937_l6>;
+
 	status = "okay";
 };
 
