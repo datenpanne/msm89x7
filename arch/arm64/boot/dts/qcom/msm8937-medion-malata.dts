@@ -194,7 +194,7 @@
 		compatible = "goodix,gt9271";
 		reg = <0x5d>;
 
-		interrupts-extended = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
+		interrupts-extended = <&tlmm 41 IRQ_TYPE_EDGE_RISING>;
 		irq-gpios = <&tlmm 41 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 		AVDD28-supply = <&pm8937_l17>;

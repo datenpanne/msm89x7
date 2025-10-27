@@ -1337,6 +1337,7 @@ static int goodix_ts_probe(struct i2c_client *client)
 		dev_err(&client->dev,
 			"Failed to enable VDDregulator: %d\n",
 			error);
+		regulator_disable(ts->avdd28);
 		return error;
 	}
 
@@ -1345,7 +1346,7 @@ static int goodix_ts_probe(struct i2c_client *client)
 		dev_err(&client->dev,
 			"Failed to enable VDDIO regulator: %d\n",
 			error);
-		regulator_disable(ts->avdd28);
+		regulator_disable(ts->vdd);
 		return error;
 	}
 
