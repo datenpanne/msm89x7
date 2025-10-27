@@ -195,7 +195,8 @@
 		reg = <0x5d>;
 
 		interrupt-parent = <&tlmm>;
-		irq-gpios = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
+		interrupts = <41 IRQ_TYPE_EDGE_FALLING>;
+		irq-gpios = <&tlmm 41 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 		AVDD28-supply = <&pm8937_l17>;
 		VDD-supply = <&pm8937_l17>;
