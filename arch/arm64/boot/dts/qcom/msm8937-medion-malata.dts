@@ -531,10 +531,6 @@
 		};
 	};
 };
-	usb-role-switch;
-
-	status = "okay";
-};
 
 &usb_hs_phy {
 	vdd-supply = <&pm8937_l2>;
