@@ -20,7 +20,7 @@ struct malata_gama_wuxga {
 	struct regulator_bulk_data *supplies;
 	struct gpio_desc *reset_gpio;
 	struct gpio_desc *enable_gpio;
-	//struct gpio_desc *blen_gpio;
+	struct gpio_desc *blen_gpio;
 };
 
 static const struct regulator_bulk_data malata_gama_wuxga_supplies[] = {
@@ -113,11 +113,18 @@ static int malata_gama_wuxga_prepare(struct drm_panel *panel)
 
 static int malata_gama_wuxga_enable(struct drm_panel *panel)
 {
-	//struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
+	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
+	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 	//struct device *dev = &ctx->dsi->dev;
 
-	/*gpiod_set_value_cansleep(ctx->blen_gpio, 1);*/
-	msleep(200);
+	gpiod_set_value_cansleep(ctx->blen_gpio, 1);
+	msleep(20);
+
+	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
+	mipi_dsi_msleep(&dsi_ctx, 120);
+	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
+
+	usleep_range(1000, 2000);
 
 	return 0;
 }
@@ -160,9 +167,10 @@ static int malata_gama_wuxga_disable(struct drm_panel *panel)
 	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 120);
 
+	gpiod_set_value_cansleep(ctx->blen_gpio, 0);
+	msleep(100);
+
 	return dsi_ctx.accum_err;
-//	gpiod_set_value_cansleep(ctx->blen_gpio, 0);
-//	msleep(100);
 
 	return 0;
 }
@@ -213,10 +221,10 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 	if (ret < 0)
 		return ret;
 
-	/*ctx->blen_gpio = devm_gpiod_get(dev, "blen", GPIOD_OUT_LOW);
+	ctx->blen_gpio = devm_gpiod_get(dev, "blen", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->blen_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->blen_gpio),
-				     "Failed to get backlight-enable-gpios\n");*/
+				     "Failed to get backlight-enable-gpios\n");
 
 	ctx->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
 	if (IS_ERR(ctx->enable_gpio))
@@ -233,8 +241,7 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-		      MIPI_DSI_MODE_LPM;
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
 
 	drm_panel_init(&ctx->panel, dev, &malata_gama_wuxga_panel_funcs,
 		       DRM_MODE_CONNECTOR_DSI);
