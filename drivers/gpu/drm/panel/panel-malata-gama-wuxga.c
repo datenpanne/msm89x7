@@ -52,10 +52,51 @@ static int malata_gama_wuxga_on(struct malata_gama_wuxga *ctx)
 	ctx->dsi->mode_flags |= MIPI_DSI_MODE_LPM;
 	msleep(24);
 
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xb0, 0x00);
+	/*mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xb0, 0x00); //original source
 	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xbf, 0x04);
-	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xc0, 0x00);
+	mipi_dsi_dcs_write_seq_multi(&dsi_ctx, 0xc0, 0x00);*/
 
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xb0, 0x01);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc0, 0x48);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc1, 0x48);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc2, 0x47);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc3, 0x47);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc4, 0x46);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc5, 0x46);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc6, 0x45);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc7, 0x45);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc8, 0x64);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xc9, 0x64);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xca, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xcb, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xcc, 0x40);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xcd, 0x40);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xce, 0x66);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xcf, 0x66);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd0, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd1, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd2, 0x41);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd3, 0x41);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd4, 0x48);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd5, 0x48);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd6, 0x47);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd7, 0x47);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd8, 0x46);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xd9, 0x46);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xda, 0x45);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xdb, 0x45);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xdc, 0x64);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xdd, 0x64);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xde, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xdf, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe0, 0x40);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe1, 0x40);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe2, 0x66);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe3, 0x66);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe4, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe5, 0x4f);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe6, 0x41);
+	mipi_dsi_dcs_write_seq_multi(&ctx, 0xe7, 0x41);
 	mipi_dsi_msleep(&dsi_ctx, 150);
 
 	return dsi_ctx.accum_err;
@@ -87,16 +128,19 @@ static int malata_gama_wuxga_prepare(struct drm_panel *panel)
 		return ret;
 	}
 
-	gpiod_set_value_cansleep(ctx->enable_gpio, 1);
-	usleep_range(10000, 15000);
-
 	ret = mipi_dsi_dcs_nop(ctx->dsi);
 	if (ret < 0) {
 			dev_err(dev, "Failed to send NOP: %d\n", ret);
 	}
 	usleep_range(1000, 2000);
 
+	gpiod_set_value_cansleep(ctx->enable_gpio, 1);
+	usleep_range(100, 150);
+
 	malata_gama_wuxga_reset(ctx);
+
+	gpiod_set_value(ctx->blen_gpio, 1);
+	usleep_range(100, 150);
 
 	ret = malata_gama_wuxga_on(ctx);
 	if (ret < 0) {
@@ -105,26 +149,22 @@ static int malata_gama_wuxga_prepare(struct drm_panel *panel)
 		regulator_bulk_disable(ARRAY_SIZE(malata_gama_wuxga_supplies), ctx->supplies);
 		return ret;
 	}
-	/*gpiod_set_value_cansleep(ctx->blen_gpio, 1);
-	msleep(200);*/
 
 	return 0;
 }
 
 static int malata_gama_wuxga_enable(struct drm_panel *panel)
 {
-	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
+	/*struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
 	struct mipi_dsi_multi_context dsi_ctx = { .dsi = ctx->dsi };
 	//struct device *dev = &ctx->dsi->dev;
-
-	gpiod_set_value_cansleep(ctx->blen_gpio, 1);
-	msleep(20);
 
 	mipi_dsi_dcs_exit_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 120);
 	mipi_dsi_dcs_set_display_on_multi(&dsi_ctx);
 
-	usleep_range(1000, 2000);
+	usleep_range(1000, 2000);*/
+	msleep(120);
 
 	return 0;
 }
@@ -134,22 +174,21 @@ static int malata_gama_wuxga_unprepare(struct drm_panel *panel)
 	struct malata_gama_wuxga *ctx = to_malata_gama_wuxga(panel);
 	//struct device *dev = &ctx->dsi->dev;
 	//int ret;
-
-	/*ret = malata_gama_wuxga_off(ctx);
+/*
+	ret = malata_gama_wuxga_off(ctx);
 	if (ret < 0)
 		dev_err(dev, "Failed to un-initialize panel: %d\n", ret);*/
 
-	/*gpiod_set_value_cansleep(ctx->blen_gpio, 0);
-	msleep(100);*/
+	gpiod_set_value_cansleep(ctx->blen_gpio, 0);
+
+	gpiod_set_value_cansleep(ctx->enable_gpio, 0);
+	usleep_range(100, 150);
 
 	gpiod_set_value_cansleep(ctx->reset_gpio, 1);
 	usleep_range(1000, 3000);
 
-	gpiod_set_value_cansleep(ctx->enable_gpio, 0);
-	usleep_range(2000, 4000);
-
 	regulator_bulk_disable(ARRAY_SIZE(malata_gama_wuxga_supplies), ctx->supplies);
-	usleep_range(7000, 9000);
+	usleep_range(1000, 2000);
 
 	return 0;
 }
@@ -166,9 +205,6 @@ static int malata_gama_wuxga_disable(struct drm_panel *panel)
 	mipi_dsi_msleep(&dsi_ctx, 100);
 	mipi_dsi_dcs_enter_sleep_mode_multi(&dsi_ctx);
 	mipi_dsi_msleep(&dsi_ctx, 120);
-
-	gpiod_set_value_cansleep(ctx->blen_gpio, 0);
-	msleep(100);
 
 	return dsi_ctx.accum_err;
 
@@ -226,7 +262,7 @@ static int malata_gama_wuxga_probe(struct mipi_dsi_device *dsi)
 		return dev_err_probe(dev, PTR_ERR(ctx->blen_gpio),
 				     "Failed to get backlight-enable-gpios\n");
 
-	ctx->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_LOW);
+	ctx->enable_gpio = devm_gpiod_get(dev, "enable", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->enable_gpio))
 		return dev_err_probe(dev, PTR_ERR(ctx->enable_gpio),
 				     "Failed to get enable-gpios\n");

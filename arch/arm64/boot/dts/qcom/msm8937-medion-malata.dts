@@ -214,16 +214,17 @@
 		compatible = "goodix,gt9271";
 		reg = <0x5d>;
 
-		interrupt-parent = <&tlmm>;
+		/*interrupt-parent = <&tlmm>;
 		interrupts = <41 IRQ_TYPE_EDGE_FALLING>;
-		irq-gpios = <&tlmm 41 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&tlmm 41 GPIO_ACTIVE_HIGH>;*/
+		reset-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+		interrupts-extended  = <&tlmm 41 IRQ_TYPE_EDGE_FALLING>;
 		AVDD28-supply = <&pm8937_l17>;
 		VDD-supply = <&pm8937_l17>;
 		VDDIO-supply = <&pm8937_l6>;
 
-		pinctrl-names = "default";
-		pinctrl-0 = <&touch_pins_default>;
+		/*pinctrl-names = "default";
+		pinctrl-0 = <&touch_pins_default>;*/
 
 		touchscreen-size-x = <1200>;
 		touchscreen-size-y = <1920>;
@@ -536,12 +537,12 @@
 		output-low;
 	};
 
-	touch_pins_default: touch-pins-default-state {
+/*	touch_pins_default: touch-pins-default-state {
 		pins = "gpio41","gpio40";
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
-	};
+	};*/
 
 /*	usb_id_default: usb-id-default {
 		pins = "gpio97","gpio131";
