@@ -174,38 +174,24 @@
 	status = "okay";
 };
 
-&blsp1_i2c2 {
+/*&blsp1_i2c2 {
+   //Pplace holder. Copy from original dts
+   PI3USB9281 (or PI3USB9211)
+   https://chromium.googlesource.com/chromiumos/platform/ec/+/08f5a1e6fc2c9467230444ac9b582dcf4d9f0068/driver/bc12/pi3usb9281.c
+   https://chromium.googlesource.com/chromiumos/platform/ec/+/08f5a1e6fc2c9467230444ac9b582dcf4d9f0068/driver/bc12/pi3usb9281.h
 	status = "okay";
-
-//TODO get it work
-	typec_pd: usb-pd@3d {
-		compatible = "pericom,pi3usb102", "gpio-sbu-mux";
+	pericom-type-c@3d {
+		compatible = "pericom,usb-type-c";
 		reg = <0x3d>;
-
-		/*interrupt-parent = <&tlmm>;
-		interrupts = <97 IRQ_TYPE_LEVEL_LOW>;
-		interrupt-names = "irq";*/
-
+		vdd_io-supply = <0xb6>;
+				interrupt-parent = <0xa7>;
+		interrupts = <0x61 0x02>;
+		pericom,enb-gpio = <0xa7 0x83 0x01>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_typec>;
-		vcc-supply = <&pm8937_l5>;
-		select-gpios = <&tlmm  97 GPIO_ACTIVE_HIGH>;
-		enable-gpios = <&tlmm 131 GPIO_ACTIVE_LOW>;
-		mode-switch;
-		orientation-switch;
-
-		typec_con: connector {
-			compatible = "usb-c-connector";
-			label = "USB-C";
-
-			port {
-				typec_ep: endpoint {
-					remote-endpoint = <&otg_ep>;
-				};
-			};
-		};
+		pinctrl-0 = <0xc3>;
+		status = "ok";
 	};
-};
+};*/
 
 &blsp1_i2c3 {
 	status = "okay";
@@ -595,18 +581,9 @@
 };*/
 
 &usb {
-	pinctrl-names = "default", "host", "device";
-	pinctrl-0 = <&pinctrl_otg_default>;
-	pinctrl-1 = <&pinctrl_otg_host>;
-	pinctrl-2 = <&pinctrl_otg_device>;
-	usb-role-switch;
+	dr_mode = "peripheral";
+	extcon = <&usb_vbus>;
 	status = "okay";
-
-	port {
-		otg_ep: endpoint {
-			remote-endpoint = <&typec_ep>;
-		};
-	};
 };
 
 &usb_hs_phy {
