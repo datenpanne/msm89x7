@@ -156,10 +156,10 @@
 		pinctrl-0 = <&usb_id_default>;
 		pinctrl-names = "default";
 	};
-
+*/
 	usb_vbus: extcon-usb-dummy {
 		compatible = "linux,extcon-usb-dummy";
-	};*/
+	};
 };
 
 &adsp {
